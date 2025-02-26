@@ -1,0 +1,462 @@
+using Microsoft.Data.Sqlite;
+using System;
+using System.Collections.Generic;
+ 
+namespace GerenciadorPedidos
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+           string conectar = "Data Source=pedidos.db";
+
+            using (var conexao = new SqliteConnection(conectar))
+            {
+                conexao.Open();
+ 
+                var createTableCmd = conexao.CreateCommand();
+                createTableCmd.CommandText = @"
+
+                CREATE TABLE IF NOT EXISTS Clientes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nome TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL);
+ 
+                CREATE TABLE IF NOT EXISTS Produtos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nome TEXT NOT NULL,
+                    preco REAL NOT NULL,
+                    estoque INTEGER NOT NULL);
+ 
+                CREATE TABLE IF NOT EXISTS Pedidos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    clienteId INTEGER NOT NULL,
+                    dataPedido TEXT NOT NULL,
+                    FOREIGN KEY (clienteId) REFERENCES Clientes(id));
+ 
+                CREATE TABLE IF NOT EXISTS ItensDoPedido (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    pedidoId INTEGER NOT NULL,
+                    produtoId INTEGER NOT NULL,
+                    quantidade INTEGER NOT NULL,
+                    precoTotal REAL NOT NULL,
+                    FOREIGN KEY (pedidoId) REFERENCES Pedidos(id),
+                    FOREIGN KEY (produtoId) REFERENCES Produtos(id));";
+ 
+                createTableCmd.ExecuteNonQuery();
+
+            }
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("Menu Principal");
+                Console.WriteLine("1. Cadastrar Cliente");
+                Console.WriteLine("2. Atualizar Email do cliente");
+                Console.WriteLine("3. Listar clientes");
+                Console.WriteLine("4. Cadastrar Produto");
+                Console.WriteLine("5. Criar Pedido");
+                Console.WriteLine("6. Listar Pedidos de um Cliente");
+                Console.WriteLine("7. Remover Cliente");
+                Console.WriteLine("8. Remover Produto");
+                Console.WriteLine("9. Listar Produtos Mais Vendidos");
+                Console.WriteLine("10. Sair");
+                Console.Write("Escolha uma opção: ");
+
+                var opcao = Console.ReadLine();
+ 
+                switch (opcao)
+                {
+                    case "1":
+                        CadastrarCliente();
+                        break;
+                    case "2":
+                        AtualizarEmail();
+                        break;
+                    case "3":
+                        ListarClientes();
+                        break;
+                    case "4":
+                        CadastrarProduto();
+                        break;
+                    case "5":
+                        CriarPedido();
+                        break;
+                    case "6":
+                        ListarPedidosDoCliente();
+                        break;
+                    case "7":
+                        RemoverCliente();
+                        break;
+                    case "8":
+                        RemoverProduto();
+                        break;
+                    case "9":
+                        ListarProdutosMaisVendidos();
+                        break;
+                    case "10":
+                        return;
+                    default:
+
+                        Console.WriteLine("Opção inválida, tente novamente.");
+                        break;
+                }
+ 
+                Console.WriteLine("Pressione qualquer tecla para voltar ao menu principal...");
+                Console.ReadKey();
+            }
+        }
+
+        static void CadastrarCliente()
+        {
+            Console.Clear();
+            Console.WriteLine("Cadastro de Cliente");
+            Console.Write("Nome: ");
+            var nome = Console.ReadLine();
+            Console.Write("Email: ");
+            var email = Console.ReadLine();
+            using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+
+                command.CommandText = @"
+                    INSERT INTO Clientes (Nome, Email)
+                    VALUES ($nome, $email)
+                ";
+                command.Parameters.AddWithValue("$nome", nome);
+                command.Parameters.AddWithValue("$email", email);
+
+                try
+                {
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Cliente cadastrado com sucesso.");
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine("Erro ao cadastrar cliente: " + ex.Message);
+                }
+            }
+        }
+
+        static void AtualizarEmail()
+          {
+   Console.Clear();
+     Console.WriteLine("Atualizar Cliente");
+     Console.Write("ID do Cliente: ");
+     var clienteId = Convert.ToInt32(Console.ReadLine());
+     Console.Write("Novo Email: ");
+     var novoEmail = Console.ReadLine();
+
+     using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+     {
+         connection.Open();
+         var command = connection.CreateCommand();
+         command.CommandText = @"
+     UPDATE Clientes
+     SET Email = $novoEmail
+     WHERE Id = $clienteId
+";
+
+         command.Parameters.AddWithValue("$novoEmail", novoEmail);
+         command.Parameters.AddWithValue("$clienteId", clienteId);
+
+         try
+         {
+             int rowsAffected = command.ExecuteNonQuery();
+           
+if (rowsAffected > 0)
+             {
+                 Console.WriteLine("Email atualizado com sucesso.");
+             }
+             else
+             {
+                 Console.WriteLine("Cliente não encontrado.");
+             }
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine("Erro ao atualizar email: " + ex.Message);
+         }
+     }
+}
+ 
+static void ListarClientes()
+{
+     Console.Clear();
+     Console.WriteLine("Lista de Clientes");
+
+     using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+     {
+         connection.Open();
+         var command = connection.CreateCommand();
+         command.CommandText = "SELECT Id, Nome, Email FROM Clientes";
+ 
+         using (var reader = command.ExecuteReader())
+         {
+             while (reader.Read())
+             {
+                 Console.WriteLine($"ID: {reader["Id"]}, Nome: {reader["Nome"]}, Email: {reader["Email"]}");
+             }
+         }
+     }
+}
+ 
+static void CadastrarProduto()
+{
+     Console.Clear();
+     Console.WriteLine("Cadastro de Produto");
+     Console.Write("Nome: ");
+     var nome = Console.ReadLine();
+     Console.Write("Preco: ");
+     var preco = Convert.ToDouble(Console.ReadLine());
+     Console.Write("Estoque: ");
+     var estoque = Convert.ToInt32(Console.ReadLine());
+
+     using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+     {
+         connection.Open();
+         var command = connection.CreateCommand();
+         command.CommandText = @"
+             INSERT INTO Produtos (Nome, Preco, Estoque)
+             VALUES ($nome, $preco, $estoque)
+         ";
+
+         command.Parameters.AddWithValue("$nome", nome);
+         command.Parameters.AddWithValue("$preco", preco);
+         command.Parameters.AddWithValue("$estoque", estoque);
+         command.ExecuteNonQuery();
+         Console.WriteLine("Produto cadastrado com sucesso.");
+     }
+}
+ 
+static void CriarPedido()
+{
+     Console.Clear();
+     Console.WriteLine("Criação de Pedido");
+     Console.Write("ID do Cliente: ");
+
+     var clienteId = Convert.ToInt32(Console.ReadLine());
+     Console.Write("Data do Pedido: ");
+     var dataPedido = Console.ReadLine();
+     var itens = new List<(int produtoId, int quantidade, double preco)>();
+
+     while (true)
+     {
+         Console.Write("ID do Produto (ou 0 para finalizar): ");
+         var produtoId = Convert.ToInt32(Console.ReadLine());
+
+         if (produtoId == 0) break;
+         Console.Write("Quantidade: ");
+         var quantidade = Convert.ToInt32(Console.ReadLine());
+         Console.Write("Preço: ");
+         var preco = Convert.ToDouble(Console.ReadLine());
+         itens.Add((produtoId, quantidade, preco));
+     }
+ 
+     using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+     {
+         connection.Open();
+         var transaction = connection.BeginTransaction();
+
+         try
+         {
+             var command = connection.CreateCommand();
+             command.CommandText = @"
+
+         INSERT INTO Pedidos (ClienteId, DataPedido)
+         VALUES ($clienteId, $dataPedido);
+         SELECT last_insert_rowid();
+     ";
+
+             command.Parameters.AddWithValue("$clienteId", clienteId);
+             command.Parameters.AddWithValue("$dataPedido", dataPedido);
+             var pedidoId = (long)command.ExecuteScalar();
+             foreach (var item in itens)
+
+             {
+                 // Verificar estoque disponível
+
+               command.CommandText = @"
+             SELECT Estoque FROM Produtos
+             WHERE Id = $produtoId
+         ";
+
+                 command.Parameters.AddWithValue("$produtoId", item.produtoId);
+                 int estoqueDisponivel = Convert.ToInt32(command.ExecuteScalar());
+
+                 if (estoqueDisponivel >= item.quantidade)
+                 {
+                     // Adicionar item ao pedido
+
+                   command.CommandText = @"
+                 INSERT INTO ItensPedido (PedidoId, ProdutoId, Quantidade, PrecoTotal)
+                 VALUES ($pedidoId, $produtoId, $quantidade, $precoTotal)
+             ";
+
+                     command.Parameters.AddWithValue("$pedidoId", pedidoId);
+                     command.Parameters.AddWithValue("$quantidade", item.quantidade);
+                     command.Parameters.AddWithValue("$precoTotal", item.quantidade * item.preco);
+                     command.ExecuteNonQuery();
+ 
+                     // Reduzir estoque
+                     command.CommandText = @"
+
+                 UPDATE Produtos
+                 SET Estoque = Estoque - $quantidade
+                 WHERE Id = $produtoId
+             ";
+                     command.ExecuteNonQuery();
+
+                 }
+                 else
+                 {
+                     throw new Exception($"Estoque insuficiente para o produto ID: {item.produtoId}");
+                 }
+             }
+             transaction.Commit();
+
+             Console.WriteLine("Pedido criado com sucesso.");
+         }
+         catch (Exception ex)
+         {
+             transaction.Rollback();
+             Console.WriteLine("Erro ao criar pedido: " + ex.Message);
+         }
+     }
+}
+
+        static void ListarPedidosDoCliente()
+        {
+            Console.Clear();
+            Console.WriteLine("Listar Pedidos de um Cliente");
+            Console.Write("ID do Cliente: ");
+            var clienteId = Convert.ToInt32(Console.ReadLine());
+
+            using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+            {
+              connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+
+                    SELECT p.Id, p.DataPedido, ip.ProdutoId, pr.Nome, ip.Quantidade, ip.PrecoTotal
+                    FROM Pedidos p
+                    JOIN ItensPedido ip ON p.Id = ip.PedidoId
+                    JOIN Produtos pr ON ip.ProdutoId = pr.Id
+                    WHERE p.ClienteId = $clienteId
+                ";
+                command.Parameters.AddWithValue("$clienteId", clienteId);
+ 
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"Pedido ID: {reader["Id"]}, Data: {reader["DataPedido"]}, Produto ID: {reader["ProdutoId"]}, Nome: {reader["Nome"]}, Quantidade: {reader["Quantidade"]}, Preço Total: {reader["PrecoTotal"]}");
+                    }
+                }
+            }
+        }
+
+        static void RemoverCliente()
+        {
+            Console.Clear();
+            Console.WriteLine("Remover Cliente");
+            Console.Write("ID do Cliente: ");
+            var clienteId = Convert.ToInt32(Console.ReadLine());
+ 
+            using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                    DELETE FROM Clientes
+                    WHERE Id = $clienteId
+                ";
+                command.Parameters.AddWithValue("$clienteId", clienteId);
+ 
+                try
+                {
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Cliente removido com sucesso.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Cliente não encontrado.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Erro ao remover cliente: " + ex.Message);
+                }
+            }
+        }
+ 
+        static void RemoverProduto()
+        {
+            Console.Clear();
+            Console.WriteLine("Remover Produto");
+            Console.Write("ID do Produto: ");
+            var produtoId = Convert.ToInt32(Console.ReadLine());
+ 
+            using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                    DELETE FROM Produtos
+                    WHERE Id = $produtoId
+                ";
+                command.Parameters.AddWithValue("$produtoId", produtoId);
+ 
+                try
+                {
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Produto removido com sucesso.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Produto não encontrado.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Erro ao remover produto: " + ex.Message);
+                }
+            }
+        }
+ 
+        static void ListarProdutosMaisVendidos()
+        {
+            Console.Clear();
+            Console.WriteLine("Listar Produtos Mais Vendidos");
+ 
+            using (var connection = new SqliteConnection("Data Source=pedidos.db"))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT pr.Nome, SUM(ip.Quantidade) AS QuantidadeVendida
+                    FROM ItensPedido ip
+                    JOIN Produtos pr ON ip.ProdutoId = pr.Id
+                    GROUP BY pr.Nome
+                    ORDER BY QuantidadeVendida DESC
+                ";
+ 
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"Produto: {reader["Nome"]}, Quantidade Vendida: {reader["QuantidadeVendida"]}");
+                    }
+                }
+            }
+        }
+    }
+}
+ 
