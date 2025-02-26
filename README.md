@@ -22,7 +22,11 @@
 
 ### 4. Configurar o Banco de Dados
 1. Crie o banco de dados `pedidos.db` usando uma ferramenta como DB Browser for SQLite.
-2. Execute os comandos SQL abaixo para criar as tabelas:
+
+   ## Dupla:
+   Maiara Nogueira Campos
+   Fernanda Nogueira Campos
+3. Execute os comandos SQL abaixo para criar as tabelas:
     ```sql
     CREATE TABLE Clientes (
         Id INTEGER PRIMARY KEY AUTOINCREMENT,
