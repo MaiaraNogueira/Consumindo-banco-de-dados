@@ -1,6 +1,3 @@
-# Fernanda Nogueira Campos
-# Maiara Nogueira Campos
-
 # Consumindo-banco-de-dados
 
 ## Requisitos
@@ -61,3 +58,6 @@
 ### 5. Executar o Programa
 1. No Visual Studio, clique em "Start" ou pressione `F5` para compilar e executar o projeto.
 2. Use o menu para interagir com o sistema.
+
+### Fernanda Nogueira Campos
+### Maiara Nogueira Campos
